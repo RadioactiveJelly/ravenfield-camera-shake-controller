@@ -6,18 +6,16 @@ function CameraShakeController:Awake()
 
 	self.multipliers = {}
 
+	
 	self.baseCameraShakeMultiplier = self.script.mutator.GetConfigurationRange("CameraShakeMultiplier")
 	Player.actor.onTakeDamage.AddListener(self,"onTakeDamage")
+	GameEvents.onActorSpawn.AddListener(self,"onActorSpawn")
+
+	self.currentMultiplier = self.baseCameraShakeMultiplier
 end
 
 function CameraShakeController:onTakeDamage(actor,source,info)
 	self.script.StartCoroutine(self:DelayedCameraShake(info.balanceDamage))
-end
-
-function CameraShakeController:Update()
-	if(Input.GetKeyDown(KeyCode.I)) then
-		Player.actor.damage(Player.actor,0,100, false ,false)
-	end
 end
 
 --Apply camera shake a frame after the game itself does it
@@ -25,10 +23,7 @@ end
 function CameraShakeController:DelayedCameraShake(balanceDamage)
 	return function()
 		coroutine.yield()
-		local scaledBalanceDamage = balanceDamage * self.baseCameraShakeMultiplier
-		for multiplier, value in pairs(self.multipliers) do
-			scaledBalanceDamage = scaledBalanceDamage * value
-		end
+		local scaledBalanceDamage = balanceDamage * self.currentMultiplier
 		
 		local magnitude = scaledBalanceDamage/6
 		local iterations = Mathf.CeilToInt(scaledBalanceDamage / 20)
@@ -39,8 +34,26 @@ end
 
 function CameraShakeController:AddModifier(modifierName, modifierValue)
 	self.multipliers[modifierName] = modifierValue
+
+	self:CalculateMultiplier()
 end
 
 function CameraShakeController:RemoveModifier(modifierName)
 	self.multipliers[modifierName] = nil
+
+	self:CalculateMultiplier()
+end
+
+function CameraShakeController:CalculateMultiplier()
+	self.currentMultiplier = self.baseCameraShakeMultiplier
+
+	for multiplier, value in pairs(self.multipliers) do
+		self.currentMultiplier = self.currentMultiplier * value
+	end
+end
+
+function CameraShakeController:onActorSpawn(actor)
+	if actor.isPlayer then
+		self:CalculateMultiplier()
+	end
 end
