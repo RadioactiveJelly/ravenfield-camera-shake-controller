@@ -8,13 +8,32 @@ function CameraShakeController:Awake()
 
 	
 	self.baseCameraShakeMultiplier = self.script.mutator.GetConfigurationRange("CameraShakeMultiplier")
+	self.shakeLimit = self.script.mutator.GetConfigurationInt("ShakeLimit")
 	Player.actor.onTakeDamage.AddListener(self,"onTakeDamage")
 	GameEvents.onActorSpawn.AddListener(self,"onActorSpawn")
 
 	self.currentMultiplier = self.baseCameraShakeMultiplier
 end
 
+function CameraShakeController:Start()
+	local damageSystemObj = self.gameObject.Find("DamageCore")
+	if damageSystemObj then
+		self.damageSystem = damageSystemObj.GetComponent(ScriptedBehaviour)
+		local function postCalc(actor, source, info)
+			self:PostDamageCalculation(actor, source, info)
+		end
+		self.damageSystem.self:AddListener("PostCalculation", Player.actor, self,postCalc)
+	else
+		Player.actor.onTakeDamage.AddListener(self,"onTakeDamage")
+	end
+end
+
 function CameraShakeController:onTakeDamage(actor,source,info)
+	self.script.StartCoroutine(self:DelayedCameraShake(info.balanceDamage))
+end
+
+function CameraShakeController:PostDamageCalculation(actor,source,info)
+	print(info.balanceDamage)
 	self.script.StartCoroutine(self:DelayedCameraShake(info.balanceDamage))
 end
 
@@ -27,6 +46,10 @@ function CameraShakeController:DelayedCameraShake(balanceDamage)
 		
 		local magnitude = scaledBalanceDamage/6
 		local iterations = Mathf.CeilToInt(scaledBalanceDamage / 20)
+		if self.shakeLimit > -1 then
+			iterations = Mathf.Clamp(iterations,0,self.shakeLimit)
+		end
+
 		PlayerCamera.ApplyScreenshake(magnitude,iterations)
 	end
 end

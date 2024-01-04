@@ -45,12 +45,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mutators:
   - name: <color=#7CFC00>Camera Shake Controller</color>
-    description: 1.0.0
+    description: 1.2.0
     menuImage: {fileID: 2800000, guid: dcefda87dc63a5a439b9b1f3ab6f745a, type: 3}
     mutatorPrefab: {fileID: 4515930228237044874, guid: 60183321449f74647b3109117d8cd52c, type: 3}
     configuration:
       labels: []
-      integers: []
+      integers:
+      - id: ShakeLimit
+        displayName: Shake Limit
+        orderPriority: 1
+        value: -1
       floats: []
       ranges:
       - id: CameraShakeMultiplier
